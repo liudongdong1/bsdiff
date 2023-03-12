@@ -36,13 +36,19 @@ static void log_error(void *opaque, const char *errmsg)
 
 int main(int argc, char * argv[])
 {
+	testDirectBuffer();
+	//testMemory(argc, argv);
+	return 0;
+}
+
+int testDirectBuffer() {
 	int ret = 1;
 	struct bsdiff_stream oldfile = { 0 }, newfile = { 0 }, patchfile = { 0 }, newfile2 = { 0 };
 	struct bsdiff_ctx ctx = { 0 };
 	struct bsdiff_patch_packer packer = { 0 }, packer2 = { 0 };
 	char* source = "THIS SOFTWARE IS PROVIDED BY THE AUTHOR ''AS IS'' AND ANY EXPRESS OR";
 	char* dest = "THIS IS PROVIDED BY THE AUTHOR ''AS IS'' AND ANY EXPRESS OR";
-	
+
 	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_READ, source, strlen(source), &oldfile)) != BSDIFF_SUCCESS) {
 		fprintf(stderr, "can't open oldfile: %s\n", source);
 		goto cleanup;
@@ -52,7 +58,7 @@ int main(int argc, char * argv[])
 		goto cleanup;
 	}
 	char* patch = NULL;
-	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_WRITE, NULL, 0, &patchfile)) != BSDIFF_SUCCESS) {
+	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_WRITE, patch, 0, &patchfile)) != BSDIFF_SUCCESS) {
 		fprintf(stderr, "can't open patchfile\n");
 		goto cleanup;
 	}
@@ -61,28 +67,41 @@ int main(int argc, char * argv[])
 		goto cleanup;
 	}
 
-
-
 	ctx.log_error = log_error;
 	if ((ret = bsdiff(&ctx, &oldfile, &newfile, &packer)) != BSDIFF_SUCCESS) {
 		fprintf(stderr, "bsdiff failed: %d\n", ret);
 		goto cleanup;
 	}
+	fprintf(stderr, "patch file: %s", patch);
+	/*struct bz2_patch_packer* bz2_pactch = (struct bz2_patch_packer*)packer.state;
+	struct bsdiff_stream* bsStream = (struct bsdiff_stream*) (bz2_pactch->stream);
+	char **temp = NULL;
+	size_t sSize = 0;
+	bsStream->get_buffer(bsStream->state, temp, &sSize);*/
+	//fprintf(stderr, "patch file: %s",*temp);
 
 
+	patchfile.set_mode(&patchfile, BSDIFF_MODE_READ);
+	patchfile.seek(patchfile.state, 0, BSDIFF_SEEK_SET);
+	packer.set_mode(&packer, BSDIFF_MODE_READ);
+	/*if ((ret = bsdiff_open_bz2_patch_packer(BSDIFF_MODE_READ, &patchfile, &packer2)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "can't create BZ2 patch packer\n");
+		goto cleanup;
+	}*/
 
-
-	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_WRITE, NULL, 0, &newfile2)) != BSDIFF_SUCCESS) {
+	char* destGen = NULL;
+	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_WRITE, destGen, 0, &newfile2)) != BSDIFF_SUCCESS) {
 		fprintf(stderr, "can't open newfile: %s\n", dest);
 		goto cleanup;
 	}
-	packer.set_mode(packer.state,BSDIFF_MODE_WRITE);
 	if ((ret = bspatch(&ctx, &oldfile, &newfile2, &packer)) != BSDIFF_SUCCESS) {
 		fprintf(stderr, "bspatch failed: %d\n", ret);
 		goto cleanup;
 	}
-	struct memstream_state* temp = (struct memstream_state* )newfile.state;
-	//printf("new file: %s", temp->buffer);
+	
+	//printf("new file: %s", (char*)temp->buffer);
+
+
 
 cleanup:
 	bsdiff_close_patch_packer(&packer);
@@ -96,11 +115,9 @@ cleanup:
 	return ret;
 }
 
-
 int testMemory(int argc, char* argv[]) {
 	int ret = 1;
 	struct bsdiff_stream oldfile = { 0 }, newfile = { 0 }, patchfile = { 0 };
-	//todo? 这种使用方式熟练
 	struct bsdiff_ctx ctx = { 0 };
 	struct bsdiff_patch_packer packer = { 0 };
 	argv[1] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\����\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v1.c";
@@ -143,6 +160,7 @@ int testMemory(int argc, char* argv[]) {
 		fprintf(stderr, "bsdiff failed: %d\n", ret);
 		goto cleanup;
 	}
+
 
 cleanup:
 	bsdiff_close_patch_packer(&packer);

@@ -77,8 +77,8 @@ static int filestream_read(void *state, void *buffer, size_t size, size_t *reade
 /**
  * @brief write the content of buffer to FILE
  * 
- * @param state 
- * @param buffer 
+ * @param state address of the file to be write
+ * @param buffer buffer to be write
  * @param size 
  * @return int 
  */
@@ -89,7 +89,7 @@ static int filestream_write(void *state, const void *buffer, size_t size)
 	return (n < size) ? BSDIFF_FILE_ERROR : BSDIFF_SUCCESS;
 }
 /**
- * @brief fflush file to disk 
+ * @brief flush file to disk 
  *  
  * @param state 
  * @return int 

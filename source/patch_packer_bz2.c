@@ -72,9 +72,9 @@ struct bz2_patch_packer
 	struct bsdiff_decompressor dpf_dec;  // diff block
 	struct bsdiff_decompressor epf_dec;  // extra block
 
-	struct bsdiff_compressor enc;
-	uint8_t *db;
-	uint8_t *eb;
+	struct bsdiff_compressor enc;   //comress data, 
+	uint8_t *db;  //bz2_patch_packer_write_entry_diff save to
+	uint8_t *eb;   //bz2_patch_packer_write_entry_extra save to
 	int64_t dblen;
 	int64_t eblen;
 };
@@ -95,7 +95,11 @@ static int bz2_patch_packer_read_new_size(void *state, int64_t *size)
 
 	struct bz2_patch_packer *packer = (struct bz2_patch_packer*)state;
 	assert(packer->mode == BSDIFF_MODE_READ);
-	assert(packer->new_size == -1);
+	if (packer->new_size >= 0) {
+		*size = packer->new_size;
+		return BSDIFF_SUCCESS;
+	}
+	assert(packer->new_size == -1);  
 
 	/*
 	File format:
@@ -339,7 +343,14 @@ static int bz2_patch_packer_write_entry_header(
 
 	return BSDIFF_SUCCESS;
 }
-
+/**
+ * @brief 
+ * 
+ * @param state point address of bsdiff_patch_packer 
+ * @param buffer 
+ * @param size 
+ * @return int 
+ */
 static int bz2_patch_packer_write_entry_diff(
 	void *state, const void *buffer, size_t size)
 {
@@ -425,6 +436,10 @@ static int bz2_patch_packer_flush(void *state)
 		return BSDIFF_ERROR;
 	if (packer->enc.flush(packer->enc.state) != BSDIFF_SUCCESS)
 		return BSDIFF_ERROR;
+	//packer->stream->state 0x0000019c09cfdf00  packer->enc.state  0x0000019c09d637b0  newsize(210)  415920(Base 10)
+	// db(204)  0x0000019c09d63590  eb(6) 0x0000019c09d636a0
+	//header(32) 0x0000007c119af258 "BSDIFF40C"
+	fprintf(stderr, "packer->enc.state file: %s , size = %d \n", packer->enc.state, strlen(packer->enc.state));
 	bsdiff_close_compressor(&(packer->enc));
 
 	/* Seek to the beginning, (re)write the header */
@@ -465,7 +480,47 @@ static int bz2_patch_packer_getmode(void *state)
 	struct bz2_patch_packer *packer = (struct bz2_patch_packer*)state;
 	return packer->mode;
 }
-
+/**
+ * @brief set the mode of bsdiff_patch_packer, and reset the operation functions piont address
+ * 
+ * @param bsdiff_packer point address of bsdiff_patch_packer
+ * @param mode 
+ *   BSDIFF_MODE_READ  0
+ *   BSDIFF_MODE_WRITE 1
+ * @return int bz2_packer->mode
+ */
+static int bz2_patch_packer_setmode(void* bsdiff_packer, int mode)
+{
+	struct bsdiff_patch_packer* packer = (struct bsdiff_patch_packer*)bsdiff_packer;
+	struct bz2_patch_packer* bz2_packer = (struct bz2_patch_packer*)packer->state;
+	struct bsdiff_stream* bstream = (struct bsdiff_stream*)bz2_packer->stream;
+	bz2_packer->mode = mode;
+	bstream->set_mode(bstream, mode);
+	if (mode == BSDIFF_MODE_READ) {
+		packer->read_new_size = bz2_patch_packer_read_new_size;
+		packer->read_entry_header = bz2_patch_packer_read_entry_header;
+		packer->read_entry_diff = bz2_patch_packer_read_entry_diff;
+		packer->read_entry_extra = bz2_patch_packer_read_entry_extra;
+	}
+	else {
+		packer->write_new_size = bz2_patch_packer_write_new_size;
+		packer->write_entry_header = bz2_patch_packer_write_entry_header;
+		packer->write_entry_diff = bz2_patch_packer_write_entry_diff;
+		packer->write_entry_extra = bz2_patch_packer_write_entry_extra;
+		packer->flush = bz2_patch_packer_flush;
+	}
+	return bz2_packer->mode;
+}
+/**
+ * @brief create bz2_patch_packer
+ * 
+ * @param mode 
+ *   BSDIFF_MODE_READ  0
+ *   BSDIFF_MODE_WRITE 1
+ * @param stream  bsdiff_stream
+ * @param packer bsdiff_patch_packer
+ * @return int 
+ */
 int bsdiff_open_bz2_patch_packer(
 	int mode,
 	struct bsdiff_stream *stream,
@@ -500,6 +555,9 @@ int bsdiff_open_bz2_patch_packer(
 	}
 	packer->close = bz2_patch_packer_close;
 	packer->get_mode = bz2_patch_packer_getmode;
+	packer->set_mode = bz2_patch_packer_setmode;
 	
 	return BSDIFF_SUCCESS;
 }
+
+

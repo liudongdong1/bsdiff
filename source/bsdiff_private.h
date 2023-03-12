@@ -22,7 +22,7 @@ int bsdiff_open_substream(
 /* bsdiff_compressor */
 struct bsdiff_compressor
 {
-	void *state;
+	void *state;   //bz2_compressor
 	int (*init)(void *state, struct bsdiff_stream *stream);
 	int (*write)(void *state, const void *buffer, size_t size);
 	int (*flush)(void *state);

@@ -94,6 +94,7 @@ struct bsdiff_stream
 	/* common */
 	void (*close)(void *state);
 	int (*get_mode)(void *state);
+	int (*set_mode)(void* bsdiff_str, int mode);
 	int (*seek)(void *state, int64_t offset, int origin);
 	int (*tell)(void *state, int64_t *position);
 	/* read mode only */
@@ -172,6 +173,7 @@ struct bsdiff_patch_packer
 	/* common */
 	void (*close)(void *state);
 	int (*get_mode)(void *state);
+	int (*set_mode)(void* bsdiff_packer, int mode);
 	/* read mode only */
 	int (*read_new_size)(
 		void *state, int64_t *size);

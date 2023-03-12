@@ -100,7 +100,12 @@ static int bz2_compressor_write(void *state, const void *buffer, size_t size)
 	/* never reached */
 	return BSDIFF_ERROR;
 }
-
+/**
+ * @brief bz2 压缩写入，写入到 enc->strm（bsdiff_stream *bz2_compressor::strm）->state（memstream_state）
+ * 
+ * @param state point address of bz2_compressor
+ * @return int 
+ */
 static int bz2_compressor_flush(void *state)
 {
 	struct bz2_compressor *enc = (struct bz2_compressor*)state;

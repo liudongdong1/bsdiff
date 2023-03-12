@@ -36,12 +36,75 @@ static void log_error(void *opaque, const char *errmsg)
 
 int main(int argc, char * argv[])
 {
+	return testMemory(argc, argv);
+}
+
+int testMemory(int argc, char* argv[]) {
 	int ret = 1;
 	struct bsdiff_stream oldfile = { 0 }, newfile = { 0 }, patchfile = { 0 };
 	struct bsdiff_ctx ctx = { 0 };
 	struct bsdiff_patch_packer packer = { 0 };
-
+	argv[1] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\桌面\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v1.c";
+	argv[2] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\桌面\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v2.c";
+	argv[3] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\桌面\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\patch";
+	void* buf = NULL;
+	argc = 4;
 	if (argc != 4) {
+		printf("caolskajdlfkajskld");
+		fprintf(stderr, "usage: %s oldfile newfile patchfile\n", argv[0]);
+		return 1;
+	}
+
+	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_READ, argv[1],strlen(argv[1]), &oldfile)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "can't open oldfile: %s\n", argv[1]);
+		goto cleanup;
+	}
+	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_READ, argv[2], strlen(argv[2]), &newfile)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "can't open newfile: %s\n", argv[2]);
+		goto cleanup;
+	}
+
+	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_WRITE, buf, 0, &patchfile)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "can't open patchfile: %s\n", argv[2]);
+		goto cleanup;
+	}
+
+	/*if ((ret = bsdiff_open_file_stream(BSDIFF_MODE_WRITE, argv[3], &patchfile)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "can't open patchfile: %s\n", argv[3]);
+		goto cleanup;
+	}*/
+	if ((ret = bsdiff_open_bz2_patch_packer(BSDIFF_MODE_WRITE, &patchfile, &packer)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "can't create BZ2 patch packer\n");
+		goto cleanup;
+	}
+
+	ctx.log_error = log_error;
+
+	if ((ret = bsdiff(&ctx, &oldfile, &newfile, &packer)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "bsdiff failed: %d\n", ret);
+		goto cleanup;
+	}
+
+cleanup:
+	bsdiff_close_patch_packer(&packer);
+	bsdiff_close_stream(&patchfile);
+	bsdiff_close_stream(&newfile);
+	bsdiff_close_stream(&oldfile);
+	//free(patch);
+	return ret;
+}
+
+int testFile(int argc, char* argv[]) {
+	int ret = 1;
+	struct bsdiff_stream oldfile = { 0 }, newfile = { 0 }, patchfile = { 0 };
+	struct bsdiff_ctx ctx = { 0 };
+	struct bsdiff_patch_packer packer = { 0 };
+	argv[1] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\桌面\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v1.c";
+	argv[2] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\桌面\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v2.c";
+	argv[3] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\桌面\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\patch";
+	argc = 4;
+	if (argc != 4) {
+		printf("caolskajdlfkajskld");
 		fprintf(stderr, "usage: %s oldfile newfile patchfile\n", argv[0]);
 		return 1;
 	}

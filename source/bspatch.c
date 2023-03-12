@@ -53,6 +53,7 @@ int bspatch(
 	assert(newfile->get_mode(newfile->state) == BSDIFF_MODE_WRITE);
 	assert(packer->get_mode(packer->state) == BSDIFF_MODE_READ);
 
+	//check and read old file to old buffer
 	if ((oldfile->seek(oldfile->state, 0, BSDIFF_SEEK_END) != BSDIFF_SUCCESS) ||
 		(oldfile->tell(oldfile->state, &oldsize) != BSDIFF_SUCCESS) ||
 		(oldfile->seek(oldfile->state, 0, BSDIFF_SEEK_SET) != BSDIFF_SUCCESS))
@@ -65,7 +66,8 @@ int bspatch(
 		HANDLE_ERROR(BSDIFF_OUT_OF_MEMORY, "malloc for old");
 	if (oldfile->read(oldfile->state, old, (size_t)oldsize, &cb) != BSDIFF_SUCCESS)
 		HANDLE_ERROR(BSDIFF_FILE_ERROR, "read oldfile");
-
+	
+	// check and read newfile data to new buffer
 	if (packer->read_new_size(packer->state, &newsize) != BSDIFF_SUCCESS)
 		HANDLE_ERROR(BSDIFF_FILE_ERROR, "read new size from patch_packer");
 	if (newsize >= SIZE_MAX)

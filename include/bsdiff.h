@@ -71,7 +71,19 @@ extern "C" {
 #define BSDIFF_SEEK_SET 0
 #define BSDIFF_SEEK_CUR 1
 #define BSDIFF_SEEK_END 2
-
+/*
+File format:
+	0		8	"BSDIFF40"
+	8		8	X
+	16		8	Y
+	24		8	sizeof(newfile)
+	32		X	bzip2(control block)
+	32+X	Y	bzip2(diff block)
+	32+X+Y	???	bzip2(extra block)
+with control block a set of triples (x,y,z) meaning "add x bytes
+from oldfile to x bytes from the diff block; copy y bytes from the
+extra block; seek forwards in oldfile by z bytes".
+*/
 
 /**
  * @brief Interface of a stream.
@@ -152,6 +164,7 @@ void bsdiff_close_stream(
  * - An array of entries, each contains a header, an optional diff data, and an optional extra data;
  *
  * Entry header is a (diff_len, extra_len, seek_len) triple.
+ * state: piont to the address of bz2_patch_packer
  */
 struct bsdiff_patch_packer
 {

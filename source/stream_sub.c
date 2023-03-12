@@ -3,7 +3,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
+/**
+ * @brief substream area of bsdiff_stream, bsdiff_stream.buffer[start, end]
+ * 
+ */
 struct substream_state
 {
 	struct bsdiff_stream *base;
@@ -11,7 +14,14 @@ struct substream_state
 	int64_t end;
 	int64_t current;
 };
-
+/**
+ * @brief set the substream->current position to offset
+ * 
+ * @param state point address of substream_state
+ * @param offset 
+ * @param origin: SEEK_SET
+ * @return int 
+ */
 static int substream_seek(void *state, int64_t offset, int origin)
 {
 	struct substream_state *substream = (struct substream_state*)state;
@@ -23,14 +33,28 @@ static int substream_seek(void *state, int64_t offset, int origin)
 	substream->current = offset;
 	return BSDIFF_SUCCESS;
 }
-
+/**
+ * @brief get current position of substream_memory
+ * 
+ * @param state point address of substream_state
+ * @param position store the current position
+ * @return int 
+ */
 static int substream_tell(void *state, int64_t *position)
 {
 	struct substream_state *substream = (struct substream_state*)state;
 	*position = substream->current;
 	return BSDIFF_SUCCESS;
 }
-
+/**
+ * @brief 
+ * 
+ * @param state point address of substream_state
+ * @param buffer memery buffer to save substream memory
+ * @param size 
+ * @param readed 
+ * @return int 
+ */
 static int substream_read(void *state, void *buffer, size_t size, size_t *readed)
 {
 	int ret;
@@ -72,7 +96,15 @@ static int substream_getmode(void *state)
 {
 	return BSDIFF_MODE_READ;
 }
-
+/**
+ * @brief 
+ * 
+ * @param base point address of bsdiff_stream
+ * @param read_start submemery_begin postion
+ * @param read_end submemery end postion
+ * @param substream resotre bsdiff_stream
+ * @return int 
+ */
 int bsdiff_open_substream(
 	struct bsdiff_stream *base,
 	int64_t read_start,
@@ -108,7 +140,7 @@ int bsdiff_open_substream(
 	memset(substream, 0, sizeof(*substream));
 	substream->state = state;
 	substream->close = substream_close;
-	substream->get_mode = substream_getmode;
+	substream->get_mode = substream_getmode;  
 	substream->seek = substream_seek;
 	substream->tell = substream_tell;
 	substream->read = substream_read;

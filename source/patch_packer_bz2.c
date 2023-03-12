@@ -7,7 +7,12 @@
 
 int bsdiff_create_bz2_compressor(struct bsdiff_compressor *enc);
 int bsdiff_create_bz2_decompressor(struct bsdiff_decompressor *dec);
-
+/**
+ * @brief calculate the size of 8 bytes，one byte equal to 8 bits
+ * 
+ * @param buf 
+ * @return int64_t 
+ */
 static int64_t offtin(uint8_t *buf)
 {
 	int64_t y;
@@ -20,7 +25,7 @@ static int64_t offtin(uint8_t *buf)
 	y = y * 256; y += buf[2];
 	y = y * 256; y += buf[1];
 	y = y * 256; y += buf[0];
-
+	// flag position
 	if (buf[7] & 0x80)
 		y = -y;
 
@@ -63,9 +68,9 @@ struct bz2_patch_packer
 	struct bsdiff_stream cpf;
 	struct bsdiff_stream dpf;
 	struct bsdiff_stream epf;
-	struct bsdiff_decompressor cpf_dec;
-	struct bsdiff_decompressor dpf_dec;
-	struct bsdiff_decompressor epf_dec;
+	struct bsdiff_decompressor cpf_dec;  // control block
+	struct bsdiff_decompressor dpf_dec;  // diff block
+	struct bsdiff_decompressor epf_dec;  // extra block
 
 	struct bsdiff_compressor enc;
 	uint8_t *db;
@@ -73,7 +78,13 @@ struct bz2_patch_packer
 	int64_t dblen;
 	int64_t eblen;
 };
-
+/**
+ * @brief read bz2_patch_packer, and get the new size
+ * 
+ * @param state point address of bz2_patch_packer
+ * @param size store the sizeof(newfile)
+ * @return int 
+ */
 static int bz2_patch_packer_read_new_size(void *state, int64_t *size)
 {
 	int ret;
@@ -155,7 +166,15 @@ static int bz2_patch_packer_read_new_size(void *state, int64_t *size)
 
 	return BSDIFF_SUCCESS;
 }
-
+/**
+ * @brief get the header_x, header_y, header_z of the Entry_head data
+ * 
+ * @param state point address of bz2_patch_packer
+ * @param diff packer->header_x;
+ * @param extra  packer->header_y;
+ * @param seek  packer->header_z;
+ * @return int 
+ */
 static int bz2_patch_packer_read_entry_header(
 	void *state, int64_t *diff, int64_t *extra, int64_t *seek)
 {
@@ -181,7 +200,15 @@ static int bz2_patch_packer_read_entry_header(
 
 	return BSDIFF_SUCCESS;
 }
-
+/**
+ * @brief read_entry_diff from packer->dpf_dec.state and save to buffer
+ * 
+ * @param state point address of bz2_patch_packer
+ * @param buffer store diff block content
+ * @param size the size of diff block size
+ * @param readed 
+ * @return int 
+ */
 static int bz2_patch_packer_read_entry_diff(
 	void *state, void *buffer, size_t size, size_t *readed)
 {
@@ -205,7 +232,15 @@ static int bz2_patch_packer_read_entry_diff(
 	packer->header_x -= (int64_t)(*readed);
 	return ret;
 }
-
+/**
+ * @brief read data from packer->epf_dec.state, and save to buffer
+ * 
+ * @param state point address of bz2_patch_packer
+ * @param buffer store extra block content
+ * @param size size of extra block content
+ * @param readed 
+ * @return int 
+ */
 static int bz2_patch_packer_read_entry_extra(
 	void *state, void *buffer, size_t size, size_t *readed)
 {
@@ -229,7 +264,13 @@ static int bz2_patch_packer_read_entry_extra(
 	packer->header_y -= (int64_t)(*readed);
 	return ret;
 }
-
+/**
+ * @brief write header, Initialize compressor for control block, Allocate memory for db && eb
+ * 
+ * @param state point address of bz2_patch_packer
+ * @param size packer->new_size, new file size
+ * @return int 
+ */
 static int bz2_patch_packer_write_new_size(
 	void *state, int64_t size)
 {
@@ -264,7 +305,15 @@ static int bz2_patch_packer_write_new_size(
 
 	return BSDIFF_SUCCESS;
 }
-
+/**
+ * @brief write head and compress
+ * 
+ * @param state point address of bz2_patch_packer
+ * @param diff diff size
+ * @param extra  extra size
+ * @param seek  seek size
+ * @return int 
+ */
 static int bz2_patch_packer_write_entry_header(
 	void *state, int64_t diff, int64_t extra, int64_t seek)
 {

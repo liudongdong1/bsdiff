@@ -6,13 +6,25 @@
 
 struct bz2_compressor
 {
+	/*flag of initialized, 1: initialized, 0: not initialized */
 	int initialized;
+	/*bsdiff_stream structure*/
 	struct bsdiff_stream *strm;
+	/*bz_stream*/
 	bz_stream bzstrm;
 	int bzerr;
+	/*buffer to temperally save data, if full, wite to disk*/
 	char buf[5000];
 };
-
+/**
+ * @brief 
+ * 
+ * @param state point address of bz2_decompressor
+ * @param stream point address of bsdiff_stream
+ * @return int 
+ * 	BSDIFF_ERROR: failed
+ * 	BSDIFF_SUCCESS: ok
+ */
 static int bz2_compressor_init(void *state, struct bsdiff_stream *stream)
 {
 	struct bz2_compressor *enc = (struct bz2_compressor*)state;
@@ -40,7 +52,16 @@ static int bz2_compressor_init(void *state, struct bsdiff_stream *stream)
 
 	return BSDIFF_SUCCESS;
 }
-
+/**
+ * @brief 
+ * 
+ * @param state point address of bz2_compressor
+ * @param buffer memery buffer wait to be compressed
+ * @param size size of buffer
+ * @return int 
+ *  BSDIFF_SUCCESS: OK
+ *  BSDIFF_ERROR: error
+ */
 static int bz2_compressor_write(void *state, const void *buffer, size_t size)
 {
 	struct bz2_compressor *enc = (struct bz2_compressor*)state;
@@ -117,7 +138,12 @@ static int bz2_compressor_flush(void *state)
 	/* never reached */
 	return BSDIFF_ERROR;
 }
-
+/**
+ * @brief if bz2_compressor is initialized, clean up BZ2_bzCompressEnd state, free bz2_decompressor
+ * 
+ * @param state point address of bz2_compressor
+ *
+ */
 static void bz2_compressor_close(void *state)
 {
 	struct bz2_compressor *enc = (struct bz2_compressor*)state;
@@ -130,7 +156,16 @@ static void bz2_compressor_close(void *state)
 	/* free the state */
 	free(enc);
 }
-
+/**
+ * @brief crate bsdiff_decompressor structure
+ * 
+ * @param dec bsdiff_decompressor point address, to be create and initialized
+	enc->init = bz2_compressor_init;
+	enc->write = bz2_compressor_write;
+	enc->flush = bz2_compressor_flush;
+	enc->close = bz2_compressor_close;
+ * @return int 
+ */
 int bsdiff_create_bz2_compressor(
 	struct bsdiff_compressor *enc)
 {

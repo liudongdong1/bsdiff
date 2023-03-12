@@ -137,7 +137,7 @@ static int memstream_getbuffer(void *state, const void **ppbuffer, size_t *psize
 
 	return BSDIFF_SUCCESS;
 }
-
+/**/
 static void memstream_close(void *state)
 {
 	struct memstream_state *s = (struct memstream_state*)state;

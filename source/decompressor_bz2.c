@@ -6,13 +6,25 @@
 
 struct bz2_decompressor
 {
+	/*flag of initialized, 1: initialized, 0: not initialized */
 	int initialized;
+	/*bsdiff_stream structure*/
 	struct bsdiff_stream *strm;
-	bz_stream bzstrm;
+	/*bz_stream*/
+	bz_stream bzstrm;  
 	int bzerr;
+	/*buffer to temperally save data, if full, wite to outer buffer*/
 	char buf[5000];
 };
-
+/**
+ * @brief 
+ * 
+ * @param state point address of bz2_decompressor
+ * @param stream point address of bsdiff_stream
+ * @return int 
+ * 	BSDIFF_ERROR: failed
+ * 	BSDIFF_SUCCESS: ok
+ */
 static int bz2_decompressor_init(void *state, struct bsdiff_stream *stream)
 {
 	struct bz2_decompressor *dec = (struct bz2_decompressor*)state;
@@ -38,7 +50,18 @@ static int bz2_decompressor_init(void *state, struct bsdiff_stream *stream)
 
 	return BSDIFF_SUCCESS;
 }
-
+/**
+ * @brief bz_decompress data to buffer
+ * 
+ * @param state point address of bz2_decompressor
+ * @param buffer memery buffer store the decompressed data
+ * @param size  size of required read data
+ * @param readed size of readed data
+ * @return int 
+ * 	BSDIFF_SUCCESS: OK
+ *  BSDIFF_ERROR: error
+ *  BSDIFF_END_OF_FILE
+ */
 static int bz2_decompressor_read(void *state, void *buffer, size_t size, size_t *readed)
 {
 	struct bz2_decompressor *dec = (struct bz2_decompressor*)state;
@@ -90,7 +113,12 @@ static int bz2_decompressor_read(void *state, void *buffer, size_t size, size_t 
 	/* never reached */
 	return BSDIFF_ERROR;
 }
-
+/**
+ * @brief if bz2_decompressor is initialized, clean up BZ2 decompress state, free bz2_decompressor
+ * 
+ * @param state point address of bz2_decompressor
+ *
+ */
 static void bz2_decompressor_close(void *state)
 {
 	struct bz2_decompressor *dec = (struct bz2_decompressor*)state;
@@ -103,7 +131,15 @@ static void bz2_decompressor_close(void *state)
 	/* free the state */
 	free(dec);
 }
-
+/**
+ * @brief create bsdiff_decompressor structure
+ * 
+ * @param dec bsdiff_decompressor point address, to be create and initialized
+ * 	dec->init = bz2_decompressor_init;
+	dec->read = bz2_decompressor_read;
+	dec->close = bz2_decompressor_close;
+ * @return int 
+ */
 int bsdiff_create_bz2_decompressor(
 	struct bsdiff_decompressor *dec)
 {

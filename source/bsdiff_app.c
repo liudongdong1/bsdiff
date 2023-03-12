@@ -36,17 +36,76 @@ static void log_error(void *opaque, const char *errmsg)
 
 int main(int argc, char * argv[])
 {
-	return testMemory(argc, argv);
+	int ret = 1;
+	struct bsdiff_stream oldfile = { 0 }, newfile = { 0 }, patchfile = { 0 }, newfile2 = { 0 };
+	struct bsdiff_ctx ctx = { 0 };
+	struct bsdiff_patch_packer packer = { 0 }, packer2 = { 0 };
+	char* source = "THIS SOFTWARE IS PROVIDED BY THE AUTHOR ''AS IS'' AND ANY EXPRESS OR";
+	char* dest = "THIS IS PROVIDED BY THE AUTHOR ''AS IS'' AND ANY EXPRESS OR";
+	
+	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_READ, source, strlen(source), &oldfile)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "can't open oldfile: %s\n", source);
+		goto cleanup;
+	}
+	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_READ, dest, strlen(dest), &newfile)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "can't open newfile: %s\n", dest);
+		goto cleanup;
+	}
+	char* patch = NULL;
+	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_WRITE, NULL, 0, &patchfile)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "can't open patchfile\n");
+		goto cleanup;
+	}
+	if ((ret = bsdiff_open_bz2_patch_packer(BSDIFF_MODE_WRITE, &patchfile, &packer)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "can't create BZ2 patch packer\n");
+		goto cleanup;
+	}
+
+
+
+	ctx.log_error = log_error;
+	if ((ret = bsdiff(&ctx, &oldfile, &newfile, &packer)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "bsdiff failed: %d\n", ret);
+		goto cleanup;
+	}
+
+
+
+
+	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_WRITE, NULL, 0, &newfile2)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "can't open newfile: %s\n", dest);
+		goto cleanup;
+	}
+	packer.set_mode(packer.state,BSDIFF_MODE_WRITE);
+	if ((ret = bspatch(&ctx, &oldfile, &newfile2, &packer)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "bspatch failed: %d\n", ret);
+		goto cleanup;
+	}
+	struct memstream_state* temp = (struct memstream_state* )newfile.state;
+	//printf("new file: %s", temp->buffer);
+
+cleanup:
+	bsdiff_close_patch_packer(&packer);
+	bsdiff_close_stream(&patchfile);
+	bsdiff_close_stream(&newfile);
+	bsdiff_close_stream(&oldfile);
+	bsdiff_close_stream(&newfile);
+	bsdiff_close_stream(&newfile2);
+
+	//free(patch);
+	return ret;
 }
+
 
 int testMemory(int argc, char* argv[]) {
 	int ret = 1;
 	struct bsdiff_stream oldfile = { 0 }, newfile = { 0 }, patchfile = { 0 };
+	//todo? è¿™ç§ä½¿ç”¨æ–¹å¼ç†Ÿç»ƒ
 	struct bsdiff_ctx ctx = { 0 };
 	struct bsdiff_patch_packer packer = { 0 };
-	argv[1] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\×ÀÃæ\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v1.c";
-	argv[2] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\×ÀÃæ\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v2.c";
-	argv[3] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\×ÀÃæ\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\patch";
+	argv[1] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\ï¿½ï¿½ï¿½ï¿½\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v1.c";
+	argv[2] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\ï¿½ï¿½ï¿½ï¿½\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v2.c";
+	argv[3] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\ï¿½ï¿½ï¿½ï¿½\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\patch";
 	void* buf = NULL;
 	argc = 4;
 	if (argc != 4) {
@@ -99,9 +158,9 @@ int testFile(int argc, char* argv[]) {
 	struct bsdiff_stream oldfile = { 0 }, newfile = { 0 }, patchfile = { 0 };
 	struct bsdiff_ctx ctx = { 0 };
 	struct bsdiff_patch_packer packer = { 0 };
-	argv[1] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\×ÀÃæ\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v1.c";
-	argv[2] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\×ÀÃæ\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v2.c";
-	argv[3] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\×ÀÃæ\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\patch";
+	argv[1] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\ï¿½ï¿½ï¿½ï¿½\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v1.c";
+	argv[2] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\ï¿½ï¿½ï¿½ï¿½\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v2.c";
+	argv[3] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\ï¿½ï¿½ï¿½ï¿½\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\patch";
 	argc = 4;
 	if (argc != 4) {
 		printf("caolskajdlfkajskld");

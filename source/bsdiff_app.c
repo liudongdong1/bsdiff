@@ -38,6 +38,7 @@ int main(int argc, char * argv[])
 {
 	testDirectBuffer();
 	//testMemory(argc, argv);
+	//testFile(argc, argv);
 	return 0;
 }
 
@@ -47,7 +48,7 @@ int testDirectBuffer() {
 	struct bsdiff_ctx ctx = { 0 };
 	struct bsdiff_patch_packer packer = { 0 }, packer2 = { 0 };
 	char* source = "THIS SOFTWARE IS PROVIDED BY THE AUTHOR ''AS IS'' AND ANY EXPRESS OR";
-	char* dest = "THIS IS PROVIDED BY THE AUTHOR ''AS IS'' AND ANY EXPRESS OR";
+	char* dest = "BY THE AUTHORTHIS IS PROVIDED BY THE AUTHOR ''AS IS'' AND ANY EXPRESS OR THIS SOFTWARE IS PROVIDED BY THE AUTHOR ''AS IS'' AND ANY EXPRESS OR THIS SOFTWARE IS PROVIDED BY THE AUTHOR ''AS IS'' AND ANY EXPRESS OR";
 
 	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_READ, source, strlen(source), &oldfile)) != BSDIFF_SUCCESS) {
 		fprintf(stderr, "can't open oldfile: %s\n", source);
@@ -72,7 +73,7 @@ int testDirectBuffer() {
 		fprintf(stderr, "bsdiff failed: %d\n", ret);
 		goto cleanup;
 	}
-	fprintf(stderr, "patch file: %s", patch);
+	fprintf(stderr, "patch file: %s \n", patch);
 	/*struct bz2_patch_packer* bz2_pactch = (struct bz2_patch_packer*)packer.state;
 	struct bsdiff_stream* bsStream = (struct bsdiff_stream*) (bz2_pactch->stream);
 	char **temp = NULL;
@@ -84,10 +85,19 @@ int testDirectBuffer() {
 	patchfile.set_mode(&patchfile, BSDIFF_MODE_READ);
 	patchfile.seek(patchfile.state, 0, BSDIFF_SEEK_SET);
 	packer.set_mode(&packer, BSDIFF_MODE_READ);
-	/*if ((ret = bsdiff_open_bz2_patch_packer(BSDIFF_MODE_READ, &patchfile, &packer2)) != BSDIFF_SUCCESS) {
+	char* buffer = NULL ;
+	size_t psize =0;
+	//todo? packer->cpf_dec.state  these value is free，error happened
+	patchfile.get_buffer(patchfile.state, &buffer, &psize);
+	fprintf(stderr, "patch packer %s, size = %d\n",buffer,psize);
+	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_READ, buffer, 0, &patchfile)) != BSDIFF_SUCCESS) {
+		fprintf(stderr, "can't open patchfile\n");
+		goto cleanup;
+	}
+	if ((ret = bsdiff_open_bz2_patch_packer(BSDIFF_MODE_READ, &patchfile, &packer2)) != BSDIFF_SUCCESS) {
 		fprintf(stderr, "can't create BZ2 patch packer\n");
 		goto cleanup;
-	}*/
+	}
 
 	char* destGen = NULL;
 	if ((ret = bsdiff_open_memory_stream(BSDIFF_MODE_WRITE, destGen, 0, &newfile2)) != BSDIFF_SUCCESS) {
@@ -98,7 +108,8 @@ int testDirectBuffer() {
 		fprintf(stderr, "bspatch failed: %d\n", ret);
 		goto cleanup;
 	}
-	
+	patchfile.get_buffer(newfile2.state, &buffer, &psize);
+	fprintf(stderr, "newfile2 packer %s, size = %d\n", buffer, psize);
 	//printf("new file: %s", (char*)temp->buffer);
 
 
@@ -160,7 +171,13 @@ int testMemory(int argc, char* argv[]) {
 		fprintf(stderr, "bsdiff failed: %d\n", ret);
 		goto cleanup;
 	}
+	char* buffer = NULL;
+	size_t psize = 0;
+	patchfile.get_buffer(newfile.state, &buffer, &psize);
+	fprintf(stderr, "newfile packer %s, size = %d\n", buffer, psize);
 
+	patchfile.get_buffer(patchfile.state, &buffer, &psize);
+	fprintf(stderr, "patch packer %s, size = %d\n", buffer, psize);
 
 cleanup:
 	bsdiff_close_patch_packer(&packer);
@@ -176,9 +193,9 @@ int testFile(int argc, char* argv[]) {
 	struct bsdiff_stream oldfile = { 0 }, newfile = { 0 }, patchfile = { 0 };
 	struct bsdiff_ctx ctx = { 0 };
 	struct bsdiff_patch_packer packer = { 0 };
-	argv[1] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\����\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v1.c";
-	argv[2] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\����\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v2.c";
-	argv[3] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\����\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\patch";
+	argv[1] = "D:\\temp\\v1.c";
+	argv[2] = "D:\\temp\\v2.c";
+	argv[3] = "D:\\temp\\patch";
 	argc = 4;
 	if (argc != 4) {
 		printf("caolskajdlfkajskld");
@@ -202,7 +219,7 @@ int testFile(int argc, char* argv[]) {
 		fprintf(stderr, "can't create BZ2 patch packer\n");
 		goto cleanup;
 	}
-
+	
 	ctx.log_error = log_error;
 
 	if ((ret = bsdiff(&ctx, &oldfile, &newfile, &packer)) != BSDIFF_SUCCESS) {

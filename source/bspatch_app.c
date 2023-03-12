@@ -44,9 +44,9 @@ int testMemory(int argc, char* argv[]) {
 	struct bsdiff_ctx ctx = { 0 };
 	struct bsdiff_patch_packer packer = { 0 };
 	argc = 4;
-	argv[1] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\×ÀÃæ\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v1.c";
-	argv[2] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\×ÀÃæ\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\v3.c";
-	argv[3] = "c:\\Users\\liudongdong\\OneDrive - tju.edu.cn\\×ÀÃæ\\android_sourcecode\\c_code\\bsdiff\\testdata\\simple\\patch";
+    argv[1] = "D:\\temp\\v1.c";
+	argv[2] = "D:\\temp\\v2.c";
+	argv[3] = "D:\\temp\\patch";
 	
 	if (argc != 4) {
 		fprintf(stderr, "usage: %s oldfile newfile patchfile\n", argv[0]);
@@ -69,7 +69,7 @@ int testMemory(int argc, char* argv[]) {
 		fprintf(stderr, "can't create BZ2 patch packer\n");
 		goto cleanup;
 	}
-
+	
 	ctx.log_error = log_error;
 
 	if ((ret = bspatch(&ctx, &oldfile, &newfile, &packer)) != BSDIFF_SUCCESS) {

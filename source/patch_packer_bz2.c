@@ -402,7 +402,7 @@ static int bz2_patch_packer_flush(void *state)
 	/* Flush ctrl data */
 	if (packer->enc.flush(packer->enc.state) != BSDIFF_SUCCESS)
 		return BSDIFF_ERROR;
-	bsdiff_close_compressor(&(packer->enc));
+	//bsdiff_close_compressor(&(packer->enc));
 
 	/* Compute size of compressed ctrl data */
 	if (packer->stream->tell(packer->stream->state, &patchsize) != BSDIFF_SUCCESS)
@@ -419,7 +419,7 @@ static int bz2_patch_packer_flush(void *state)
 		return BSDIFF_ERROR;
 	if (packer->enc.flush(packer->enc.state) != BSDIFF_SUCCESS)
 		return BSDIFF_ERROR;
-	bsdiff_close_compressor(&(packer->enc));
+	//bsdiff_close_compressor(&(packer->enc));
 
 	/* Compute size of compressed diff data */
 	if (packer->stream->tell(packer->stream->state, &patchsize2) != BSDIFF_SUCCESS)
@@ -440,7 +440,7 @@ static int bz2_patch_packer_flush(void *state)
 	// db(204)  0x0000019c09d63590  eb(6) 0x0000019c09d636a0
 	//header(32) 0x0000007c119af258 "BSDIFF40C"
 	fprintf(stderr, "packer->enc.state file: %s , size = %d \n", packer->enc.state, strlen(packer->enc.state));
-	bsdiff_close_compressor(&(packer->enc));
+	//bsdiff_close_compressor(&(packer->enc));
 
 	/* Seek to the beginning, (re)write the header */
 	if ((packer->stream->seek(packer->stream->state, 0, BSDIFF_SEEK_SET) != BSDIFF_SUCCESS) ||
@@ -449,7 +449,7 @@ static int bz2_patch_packer_flush(void *state)
 	{
 		return BSDIFF_FILE_ERROR;
 	}
-
+	fprintf(stderr, "packer->stream->state file: %s , size = %d \n", packer->stream->state, strlen(packer->stream->state));
 	return BSDIFF_SUCCESS;
 }
 

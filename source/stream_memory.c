@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
 
 /**
  * @brief memstream structure
@@ -191,7 +192,11 @@ static int memstream_flush(void *state)
 static int memstream_getbuffer(void *state, const void **ppbuffer, size_t *psize)
 {
 	struct memstream_state *s = (struct memstream_state*)state;
-
+	fprintf(stderr, " memstream_getbuffer patch packer %s, size = %d\n", s->buffer, s->size);
+	//void* newbuf = malloc(s->size);
+    /* memcpy */
+    //memcpy((uint8_t*)newbuf, s->buffer, s->size);
+	//fprintf(stderr, " memstream_getbuffer patch packer %s, size = %d\n", newbuf, s->size);
 	*ppbuffer = s->buffer;
 	*psize = s->size;
 
